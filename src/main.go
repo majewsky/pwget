@@ -19,7 +19,7 @@
 
 package main
 
-import "golang.org/x/crypto/scrypt"
+import "../localdeps/golang.org/x/crypto/scrypt"
 
 //Scrypt wraps scrypt.Key() and defines its parameters so that the KDF always
 //produces the same results within the scope of this program.
