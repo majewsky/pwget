@@ -33,9 +33,9 @@ pwget $DOMAIN
 ```
 
 where `$DOMAIN` identifies the service that you're trying to log on. It's your
-job to come up with a consistent scheme for these `<domain>` values, because
-pwget does not enforce anything. The following three, for example, will
-generate completely different passwords:
+job to come up with a consistent scheme for these `$DOMAIN` values. pwget does
+not enforce anything. The following three, for example, will generate
+completely different passwords:
 
 ```bash
 pwget example.com
