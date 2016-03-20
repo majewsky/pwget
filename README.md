@@ -54,3 +54,21 @@ passwords is stored at `$HOME/.pwget-revocation`, which contains the SHA256
 hash of every revoked password. pwget will always show a list of all revoked
 passwords that it encounters, so you can recover from an undesired revocation
 easily.
+
+## Algorithm
+
+In pseudo-code:
+
+```
+func getPassword(masterPassword, domain) {
+    for iteration in 0..infinity {
+        salt = iteration + ":" + domain
+        pw = scrypt(password, salt, N = 2^16, r = 8, p = 16, keylength = 32 bytes)
+        if pw is not revoked {
+            return pw
+        }
+    }
+}
+```
+
+Where `scrypt()` is the SCrypt key derivation function.
