@@ -12,6 +12,25 @@ revocation list can always be recovered by starting from an empty list,
 generating passwords, and revoking those that don't work until you get to the
 first non-revoked password.
 
+## Security considerations
+
+**WARNING: I'm not a professional cryptographer.** I deny all responsibility if
+you use this code and then lose your passwords or identity.
+
+Having said that, I consider the main attack vector to be identity theft
+through sniffing the master password, e.g. via a keylogger. That attack vector
+exists for all password managers that use a master password.
+
+But for a stateless password manager, a master password cannot easily be
+changed, unless you are willing to change all passwords derived from it. I
+don't see a practical difference, though: If your master password is
+compromised, you should always assume all derived passwords compromised as
+well, since the adversary has likely already obtained a copy of your password
+store (if your password manager maintains one).
+
+In the end, the same advice as always holds true: Know your threat model, and
+carefully weigh security against utility.
+
 ## Installation
 
 ```bash
