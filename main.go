@@ -27,7 +27,7 @@ import (
 	"strconv"
 	"strings"
 
-	"./localdeps/golang.org/x/crypto/scrypt"
+	"golang.org/x/crypto/scrypt"
 )
 
 /*
