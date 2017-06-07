@@ -28,15 +28,8 @@ import (
 	"strings"
 
 	"golang.org/x/crypto/scrypt"
+	"golang.org/x/crypto/ssh/terminal"
 )
-
-/*
-#cgo LDFLAGS: -lcrypto
-#cgo CFLAGS: -Wno-deprecated-declarations
-#include <stdio.h>
-#include <openssl/ui.h>
-*/
-import "C"
 
 func main() {
 	//check arguments
@@ -133,21 +126,10 @@ func ParseArguments() (domain string, revoke bool) {
 //
 //[1] https://github.com/bslatkin/getpass/blob/ef7bd7b01e3d5412b3a5f25fe5348ccf18f19751/getpass.go
 func GetMasterPassword() ([]byte, error) {
-	bufferSize := 256
-	buffer := C.malloc(C.size_t(bufferSize))
-	defer C.free(buffer)
-	bufferPtr := (*C.char)(buffer)
-
-	returnCode, err := C.UI_UTIL_read_pw_string(
-		bufferPtr, C.int(bufferSize),
-		C.CString("Master password: "),
-		C.int(0), //don't require confirmation
-	)
-
-	if returnCode != 0 {
-		return nil, err
-	}
-	return []byte(C.GoString(bufferPtr)), nil
+	os.Stdout.Write([]byte("Master password: "))
+	result, err := terminal.ReadPassword(0)
+	os.Stdout.Write([]byte("\n"))
+	return result, err
 }
 
 func revocationListPath() string {
