@@ -120,15 +120,13 @@ func ParseArguments() (domain string, revoke bool) {
 	return argDomain, argRevoke
 }
 
-//GetMasterPassword queries the user for the master password. Will not return
-//if an error occurs. This implementation is copied from [1], but specialized
-//to the particular usecase.
-//
-//[1] https://github.com/bslatkin/getpass/blob/ef7bd7b01e3d5412b3a5f25fe5348ccf18f19751/getpass.go
+//GetMasterPassword queries the user for the master password.
 func GetMasterPassword() ([]byte, error) {
-	os.Stdout.Write([]byte("Master password: "))
+	//prompt is written to stderr because pwget may be used in a pipe where the
+	//password is read from stdout by the next program (e.g. xsel or xclip)
+	os.Stderr.Write([]byte("Master password: "))
 	result, err := terminal.ReadPassword(0)
-	os.Stdout.Write([]byte("\n"))
+	os.Stderr.Write([]byte("\n"))
 	return result, err
 }
 
