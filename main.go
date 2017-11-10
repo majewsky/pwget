@@ -26,6 +26,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"syscall"
 
 	"golang.org/x/crypto/scrypt"
 	"golang.org/x/crypto/ssh/terminal"
@@ -125,7 +126,7 @@ func GetMasterPassword() ([]byte, error) {
 	//prompt is written to stderr because pwget may be used in a pipe where the
 	//password is read from stdout by the next program (e.g. xsel or xclip)
 	os.Stderr.Write([]byte("Master password: "))
-	result, err := terminal.ReadPassword(0)
+	result, err := terminal.ReadPassword(int(syscall.Stdin))
 	os.Stderr.Write([]byte("\n"))
 	return result, err
 }
