@@ -44,13 +44,27 @@ func main() {
 	masterPassword, err := GetMasterPassword()
 	FailOnError("password query", err)
 
+	//make character space for later mapping
+	charSpace := "_-0123456789"
+	var offset byte
+	for offset = 0; offset < 26; offset++ {
+		charSpace += string('A' + offset)
+		charSpace += string('a' + offset)
+	}
+
 	//now we're all set, derive the password
 	var passwordStr, hashStr string
 	for iteration := 0; true; iteration++ {
 		//get the password for this iteration
 		salt := []byte(strconv.Itoa(iteration) + ":" + domain)
 		password := Scrypt(masterPassword, salt)
-		passwordStr = hex.EncodeToString(password)
+
+		// map password to character space
+		passwordStr = ""
+		for _, b := range password {
+			charIndex := int(b) % len(charSpace)
+			passwordStr += string(charSpace[charIndex])
+		}
 
 		//this is the correct password, unless it has been revoked
 		hash := sha256.Sum256([]byte(passwordStr))
