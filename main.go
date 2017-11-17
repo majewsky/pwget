@@ -35,7 +35,7 @@ import (
 
 func main() {
 	//check arguments
-	domain, doRevoke := ParseArguments()
+	domain, doRevoke, maxLen := ParseArguments()
 
 	//load revocation list
 	isSHA256OfRevokedPassword, err := LoadRevocationList()
@@ -69,7 +69,11 @@ func main() {
 		err := AppendToRevocationList(hashStr)
 		FailOnError("update revocation list", err)
 	} else {
-		os.Stdout.Write([]byte(passwordStr))
+		if maxLen > 0 {
+			os.Stdout.Write([]byte(passwordStr)[:maxLen])
+		} else {
+			os.Stdout.Write([]byte(passwordStr))
+		}
 		os.Stdout.Sync()
 		//write the newline on stderr only, so that it is not copied when
 		//piping stdout to xsel or xclip
@@ -86,12 +90,17 @@ func FailOnError(operation string, err error) {
 }
 
 //ParseArguments parses the os.Args. Will not return if they are malformed.
-func ParseArguments() (domain string, revoke bool) {
-	//parse flags
+func ParseArguments() (domain string, revoke bool, maxLen int) {
+	//parse and check flags
 	var help bool
 	pflag.BoolVarP(&revoke, "revoke", "r", false, "Revoke the current password for the domain")
 	pflag.BoolVarP(&help, "help", "h", false, "Show information on program usage")
+	pflag.IntVarP(&maxLen, "maxlength", "l", 0, "Maximum length to which the generated password will be shortened. 0 means don't shorten.")
 	pflag.Parse()
+	if maxLen < 0 {
+		os.Stderr.Write([]byte("error: maximum length must not be negative\n"))
+		os.Exit(1)
+	}
 
 	//check remaining arguments
 	if len(pflag.Args()) > 1 {
@@ -100,12 +109,12 @@ func ParseArguments() (domain string, revoke bool) {
 	}
 
 	if len(pflag.Args()) <= 0 || help {
-		os.Stderr.Write([]byte("Usage: " + os.Args[0] + " [-r|--revoke] <domain>\n"))
+		os.Stderr.Write([]byte("Usage: " + os.Args[0] + " [-r|--revoke] [-l|--maxlength <max_len>] <domain>\n"))
 		os.Exit(1)
 	}
 
 	domain = pflag.Args()[0]
-	return domain, revoke
+	return domain, revoke, maxLen
 }
 
 //GetMasterPassword queries the user for the master password.
