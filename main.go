@@ -28,6 +28,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/ogier/pflag"
 	"golang.org/x/crypto/scrypt"
 	"golang.org/x/crypto/ssh/terminal"
 )
@@ -86,39 +87,25 @@ func FailOnError(operation string, err error) {
 
 //ParseArguments parses the os.Args. Will not return if they are malformed.
 func ParseArguments() (domain string, revoke bool) {
-	usage := []byte("Usage: " + os.Args[0] + " [-r|--revoke] <domain>\n")
+	//parse flags
+	var help bool
+	pflag.BoolVarP(&revoke, "revoke", "r", false, "Revoke the current password for the domain")
+	pflag.BoolVarP(&help, "help", "h", false, "Show information on program usage")
+	pflag.Parse()
 
-	//need at least one argument
-	if len(os.Args) < 2 {
-		os.Stderr.Write(usage)
+	//check remaining arguments
+	if len(pflag.Args()) > 1 {
+		os.Stderr.Write([]byte("error: multiple domains\n"))
 		os.Exit(1)
 	}
 
-	//read arguments
-	var argRevoke = false
-	var argDomain string
-	for _, arg := range os.Args[1:] {
-		switch arg {
-		case "-h", "--help":
-			os.Stderr.Write(usage)
-			os.Exit(0)
-		case "-r", "--revoke":
-			argRevoke = true
-		default:
-			if argDomain != "" {
-				os.Stderr.Write([]byte("error: multiple domains\n"))
-				os.Exit(1)
-			}
-			argDomain = arg
-		}
-	}
-
-	//need domain to continue
-	if argDomain == "" {
-		os.Stderr.Write(usage)
+	if len(pflag.Args()) <= 0 || help {
+		os.Stderr.Write([]byte("Usage: " + os.Args[0] + " [-r|--revoke] <domain>\n"))
 		os.Exit(1)
 	}
-	return argDomain, argRevoke
+
+	domain = pflag.Args()[0]
+	return domain, revoke
 }
 
 //GetMasterPassword queries the user for the master password.
