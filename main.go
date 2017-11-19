@@ -24,6 +24,7 @@ import (
 	"encoding/hex"
 	"io/ioutil"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
@@ -35,7 +36,7 @@ import (
 
 func main() {
 	//check arguments
-	domain, doRevoke, maxLen := ParseArguments()
+	domain, doRevoke, maxLen, needsUpper, needsLower, needsSpecial, needsNumber := ParseArguments()
 
 	//load revocation list
 	isSHA256OfRevokedPassword, err := LoadRevocationList()
@@ -69,15 +70,46 @@ func main() {
 		err := AppendToRevocationList(hashStr)
 		FailOnError("update revocation list", err)
 	} else {
-		if maxLen > 0 {
-			os.Stdout.Write([]byte(passwordStr)[:maxLen])
-		} else {
-			os.Stdout.Write([]byte(passwordStr))
+
+		//shorten password
+		if maxLen > 0 && maxLen < len(passwordStr) {
+			passwordStr = passwordStr[:maxLen]
 		}
+
+		//handle domain properties
+		password := []byte(passwordStr)
+		var offset uint = uint(len(password))
+
+		if needsUpper {
+			includeInPassword(password, &offset, "[A-Z]", 'A')
+		}
+		if needsLower {
+			includeInPassword(password, &offset, "[a-z]", 'a')
+		}
+		if needsSpecial {
+			includeInPassword(password, &offset, "[_\\-]", '-')
+		}
+		if needsNumber {
+			includeInPassword(password, &offset, "[0-9]", '0')
+		}
+
+		os.Stdout.Write(password)
 		os.Stdout.Sync()
 		//write the newline on stderr only, so that it is not copied when
 		//piping stdout to xsel or xclip
 		os.Stderr.Write([]byte("\n"))
+	}
+}
+
+//includeInPassword adds the character of a specific class to the password if not already present
+func includeInPassword(password []byte, offset *uint, classPattern string, char byte) {
+	match, err := regexp.MatchString(classPattern, string(password))
+	if err != nil {
+		panic(err)
+	}
+	if !match {
+		password[*offset-1] = char
+		*offset--
 	}
 }
 
@@ -90,12 +122,19 @@ func FailOnError(operation string, err error) {
 }
 
 //ParseArguments parses the os.Args. Will not return if they are malformed.
-func ParseArguments() (domain string, revoke bool, maxLen int) {
-	//parse and check flags
+func ParseArguments() (domain string, revoke bool, maxLen int, upper bool, lower bool, special bool, number bool) {
+
+	//define flags
 	var help bool
 	pflag.BoolVarP(&revoke, "revoke", "r", false, "Revoke the current password for the domain")
 	pflag.BoolVarP(&help, "help", "h", false, "Show information on program usage")
+	pflag.BoolVarP(&upper, "upper", "A", false, "Generated password will contain a upper-case character")
+	pflag.BoolVarP(&lower, "lower", "a", false, "Generated password will contain a lower-case character")
+	pflag.BoolVarP(&special, "special", "s", false, "Generated password will contain the special character '!'")
+	pflag.BoolVarP(&number, "number", "n", false, "Generated password will contain a number")
 	pflag.IntVarP(&maxLen, "maxlength", "l", 0, "Maximum length to which the generated password will be shortened. 0 means don't shorten.")
+
+	//parse and check flags
 	pflag.Parse()
 	if maxLen < 0 {
 		os.Stderr.Write([]byte("error: maximum length must not be negative\n"))
@@ -114,7 +153,7 @@ func ParseArguments() (domain string, revoke bool, maxLen int) {
 	}
 
 	domain = pflag.Args()[0]
-	return domain, revoke, maxLen
+	return domain, revoke, maxLen, upper, lower, special, number
 }
 
 //GetMasterPassword queries the user for the master password.
