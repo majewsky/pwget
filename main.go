@@ -36,7 +36,7 @@ import (
 
 func main() {
 	//check arguments
-	domain, doRevoke, maxLen, needsUpper, needsLower, needsSpecial, needsNumber := ParseArguments()
+	domain, doRevoke, maxLen, needsUpper, needsLower, needsSpecial, needsDigit := ParseArguments()
 
 	//load revocation list
 	isSHA256OfRevokedPassword, err := LoadRevocationList()
@@ -89,7 +89,7 @@ func main() {
 		if needsSpecial {
 			includeInPassword(password, &offset, "[_\\-]", '-')
 		}
-		if needsNumber {
+		if needsDigit {
 			includeInPassword(password, &offset, "[0-9]", '0')
 		}
 
@@ -122,7 +122,7 @@ func FailOnError(operation string, err error) {
 }
 
 //ParseArguments parses the os.Args. Will not return if they are malformed.
-func ParseArguments() (domain string, revoke bool, maxLen int, upper bool, lower bool, special bool, number bool) {
+func ParseArguments() (domain string, revoke bool, maxLen int, upper bool, lower bool, special bool, digit bool) {
 
 	//define flags
 	var help bool
@@ -130,8 +130,8 @@ func ParseArguments() (domain string, revoke bool, maxLen int, upper bool, lower
 	pflag.BoolVarP(&help, "help", "h", false, "Show information on program usage")
 	pflag.BoolVarP(&upper, "upper", "A", false, "Generated password will contain a upper-case character")
 	pflag.BoolVarP(&lower, "lower", "a", false, "Generated password will contain a lower-case character")
-	pflag.BoolVarP(&special, "special", "s", false, "Generated password will contain the special character '!'")
-	pflag.BoolVarP(&number, "number", "n", false, "Generated password will contain a number")
+	pflag.BoolVarP(&special, "special", "s", false, "Generated password will contain the special character '-'")
+	pflag.BoolVarP(&digit, "digit", "d", false, "Generated password will contain a digit")
 	pflag.IntVarP(&maxLen, "maxlength", "l", 0, "Maximum length to which the generated password will be shortened. 0 means don't shorten.")
 
 	//parse and check flags
@@ -153,7 +153,7 @@ func ParseArguments() (domain string, revoke bool, maxLen int, upper bool, lower
 	}
 
 	domain = pflag.Args()[0]
-	return domain, revoke, maxLen, upper, lower, special, number
+	return domain, revoke, maxLen, upper, lower, special, digit
 }
 
 //GetMasterPassword queries the user for the master password.
