@@ -148,7 +148,8 @@ func ParseArguments() (domain string, revoke bool, maxLen int, upper bool, lower
 	}
 
 	if len(pflag.Args()) <= 0 || help {
-		os.Stderr.Write([]byte("Usage: " + os.Args[0] + " [-r|--revoke] [-l|--maxlength <max_len>] <domain>\n"))
+		os.Stderr.Write([]byte("Usage:\t" + os.Args[0] + " [-r|--revoke] [-l|--maxlength <max_len>] [-A|--upper] [-a|--lower] [-d|--digit] [-s|--special] <domain>\n"))
+		pflag.PrintDefaults();
 		os.Exit(1)
 	}
 
