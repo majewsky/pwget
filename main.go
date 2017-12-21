@@ -24,17 +24,19 @@ import (
 	"encoding/hex"
 	"io/ioutil"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
 
+	"github.com/ogier/pflag"
 	"golang.org/x/crypto/scrypt"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
 func main() {
 	//check arguments
-	domain, doRevoke := ParseArguments()
+	domain, doRevoke, maxLen, needsUpper, needsLower, needsSpecial, needsDigit := ParseArguments()
 
 	//load revocation list
 	isSHA256OfRevokedPassword, err := LoadRevocationList()
@@ -68,11 +70,46 @@ func main() {
 		err := AppendToRevocationList(hashStr)
 		FailOnError("update revocation list", err)
 	} else {
-		os.Stdout.Write([]byte(passwordStr))
+
+		//shorten password
+		if maxLen > 0 && maxLen < len(passwordStr) {
+			passwordStr = passwordStr[:maxLen]
+		}
+
+		//handle domain properties
+		password := []byte(passwordStr)
+		var offset uint = uint(len(password))
+
+		if needsUpper {
+			includeInPassword(password, &offset, "[A-Z]", 'A')
+		}
+		if needsLower {
+			includeInPassword(password, &offset, "[a-z]", 'a')
+		}
+		if needsSpecial {
+			includeInPassword(password, &offset, "[_\\-]", '-')
+		}
+		if needsDigit {
+			includeInPassword(password, &offset, "[0-9]", '0')
+		}
+
+		os.Stdout.Write(password)
 		os.Stdout.Sync()
 		//write the newline on stderr only, so that it is not copied when
 		//piping stdout to xsel or xclip
 		os.Stderr.Write([]byte("\n"))
+	}
+}
+
+//includeInPassword adds the character of a specific class to the password if not already present
+func includeInPassword(password []byte, offset *uint, classPattern string, char byte) {
+	match, err := regexp.MatchString(classPattern, string(password))
+	if err != nil {
+		panic(err)
+	}
+	if !match {
+		password[*offset-1] = char
+		*offset--
 	}
 }
 
@@ -85,40 +122,39 @@ func FailOnError(operation string, err error) {
 }
 
 //ParseArguments parses the os.Args. Will not return if they are malformed.
-func ParseArguments() (domain string, revoke bool) {
-	usage := []byte("Usage: " + os.Args[0] + " [-r|--revoke] <domain>\n")
+func ParseArguments() (domain string, revoke bool, maxLen int, upper bool, lower bool, special bool, digit bool) {
 
-	//need at least one argument
-	if len(os.Args) < 2 {
-		os.Stderr.Write(usage)
+	//define flags
+	var help bool
+	pflag.BoolVarP(&revoke, "revoke", "r", false, "Revoke the current password for the domain")
+	pflag.BoolVarP(&help, "help", "h", false, "Show information on program usage")
+	pflag.BoolVarP(&upper, "upper", "A", false, "Generated password will contain a upper-case character")
+	pflag.BoolVarP(&lower, "lower", "a", false, "Generated password will contain a lower-case character")
+	pflag.BoolVarP(&special, "special", "s", false, "Generated password will contain the special character '-'")
+	pflag.BoolVarP(&digit, "digit", "d", false, "Generated password will contain a digit")
+	pflag.IntVarP(&maxLen, "maxlength", "l", 0, "Maximum length to which the generated password will be shortened. 0 means don't shorten.")
+
+	//parse and check flags
+	pflag.Parse()
+	if maxLen < 0 {
+		os.Stderr.Write([]byte("error: maximum length must not be negative\n"))
 		os.Exit(1)
 	}
 
-	//read arguments
-	var argRevoke = false
-	var argDomain string
-	for _, arg := range os.Args[1:] {
-		switch arg {
-		case "-h", "--help":
-			os.Stderr.Write(usage)
-			os.Exit(0)
-		case "-r", "--revoke":
-			argRevoke = true
-		default:
-			if argDomain != "" {
-				os.Stderr.Write([]byte("error: multiple domains\n"))
-				os.Exit(1)
-			}
-			argDomain = arg
-		}
-	}
-
-	//need domain to continue
-	if argDomain == "" {
-		os.Stderr.Write(usage)
+	//check remaining arguments
+	if len(pflag.Args()) > 1 {
+		os.Stderr.Write([]byte("error: multiple domains\n"))
 		os.Exit(1)
 	}
-	return argDomain, argRevoke
+
+	if len(pflag.Args()) <= 0 || help {
+		os.Stderr.Write([]byte("Usage:\t" + os.Args[0] + " [-r|--revoke] [-l|--maxlength <max_len>] [-A|--upper] [-a|--lower] [-d|--digit] [-s|--special] <domain>\n"))
+		pflag.PrintDefaults();
+		os.Exit(1)
+	}
+
+	domain = pflag.Args()[0]
+	return domain, revoke, maxLen, upper, lower, special, digit
 }
 
 //GetMasterPassword queries the user for the master password.

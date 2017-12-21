@@ -74,6 +74,17 @@ hash of every revoked password. pwget will always show a list of all revoked
 passwords that it encounters, so you can recover from an undesired revocation
 easily.
 
+Many systems enforce some sort of password policy, e.&nbsp;g. the password must
+contain at least one upper-case character, at least one digit, etc.
+To avoid the necessity of tweaking a pwget-generated password in order to be
+able to use it on such a system, pwget has the following command line switches
+that influence the password generation:
+- `[ -l | --maxlength ] <max_len>`: The generated password will have a length of `max_len` characters at most
+- `-A | --upper`: The generated password will contain at least one upper-case letter
+- `-a | --lower`: The generated password will contain at least one lower-case letter
+- `-s | --special`: The generated password will contain at least one special character
+- `-d | --digit`: The generated password will contain at least one digit
+
 ## Algorithm
 
 In pseudo-code:
