@@ -21,13 +21,13 @@ package main
 
 import (
 	"crypto/sha256"
-	"encoding/hex"
 	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
 	"syscall"
 
+	"github.com/tilinna/z85"
 	"golang.org/x/crypto/scrypt"
 	"golang.org/x/crypto/ssh/terminal"
 )
@@ -50,11 +50,11 @@ func main() {
 		//get the password for this iteration
 		salt := []byte(strconv.Itoa(iteration) + ":" + domain)
 		password := Scrypt(masterPassword, salt)
-		passwordStr = hex.EncodeToString(password)
+		passwordStr = z85EncodeToString(password)
 
 		//this is the correct password, unless it has been revoked
 		hash := sha256.Sum256([]byte(passwordStr))
-		hashStr = hex.EncodeToString(hash[:])
+		hashStr = z85EncodeToString(hash[:])
 		if isSHA256OfRevokedPassword[hashStr] {
 			os.Stderr.Write([]byte("\x1B[37m" + passwordStr + " is revoked\x1B[0m\n"))
 			continue
@@ -181,4 +181,13 @@ func Scrypt(password, salt []byte) []byte {
 		panic(err.Error())
 	}
 	return result
+}
+
+func z85EncodeToString(src []byte) string {
+	dst := make([]byte, z85.EncodedLen(len(src)))
+	n, err := z85.Encode(dst, src)
+	if err != nil {
+		panic(err.Error())
+	}
+	return string(dst[0:n])
 }

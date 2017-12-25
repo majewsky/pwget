@@ -84,10 +84,16 @@ func getPassword(masterPassword, domain) {
         salt = iteration + ":" + domain
         pw = scrypt(password, salt, N = 2^16, r = 8, p = 16, keylength = 32 bytes)
         if pw is not revoked {
-            return pw
+            return z85_encode(pw)
         }
     }
 }
 ```
 
-Where `scrypt()` is the SCrypt key derivation function.
+Where `scrypt()` is the SCrypt key derivation function, and `z85_encode()`
+encodes the bytearray obtained from `scrypt()` to text using the [Z85
+encoding](http://rfc.zeromq.org/spec:32/Z85), a variant of Base85.
+
+Encoding passwords in Z85 ensures that the overwhelming majority of passwords
+include lowercase letters, uppercase letters, numbers and symbols, like a lot
+of stupid websites require.
