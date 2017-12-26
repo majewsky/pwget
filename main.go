@@ -34,7 +34,7 @@ import (
 
 func main() {
 	//check arguments
-	domain, doRevoke := ParseArguments()
+	domain, length, doRevoke := ParseArguments()
 
 	//load revocation list
 	isSHA256OfRevokedPassword, err := LoadRevocationList()
@@ -68,6 +68,10 @@ func main() {
 		err := AppendToRevocationList(hashStr)
 		FailOnError("update revocation list", err)
 	} else {
+		//truncate password if requested
+		if length > 0 && len(passwordStr) > length {
+			passwordStr = passwordStr[0:length]
+		}
 		os.Stdout.Write([]byte(passwordStr))
 		os.Stdout.Sync()
 		//write the newline on stderr only, so that it is not copied when
@@ -85,18 +89,12 @@ func FailOnError(operation string, err error) {
 }
 
 //ParseArguments parses the os.Args. Will not return if they are malformed.
-func ParseArguments() (domain string, revoke bool) {
-	usage := []byte("Usage: " + os.Args[0] + " [-r|--revoke] <domain>\n")
-
-	//need at least one argument
-	if len(os.Args) < 2 {
-		os.Stderr.Write(usage)
-		os.Exit(1)
-	}
+func ParseArguments() (domain string, length int, revoke bool) {
+	usage := []byte("Usage: " + os.Args[0] + " [-r|--revoke] <domain> [length]\n")
 
 	//read arguments
 	var argRevoke = false
-	var argDomain string
+	var positionalArgs []string
 	for _, arg := range os.Args[1:] {
 		switch arg {
 		case "-h", "--help":
@@ -105,20 +103,29 @@ func ParseArguments() (domain string, revoke bool) {
 		case "-r", "--revoke":
 			argRevoke = true
 		default:
-			if argDomain != "" {
-				os.Stderr.Write([]byte("error: multiple domains\n"))
-				os.Exit(1)
-			}
-			argDomain = arg
+			positionalArgs = append(positionalArgs, arg)
 		}
 	}
 
-	//need domain to continue
-	if argDomain == "" {
+	//need one or two arguments
+	argDomain, argLength := "", 0
+	switch len(positionalArgs) {
+	case 1:
+		argDomain = positionalArgs[0]
+	case 2:
+		argDomain = positionalArgs[0]
+		var err error
+		argLength, err = strconv.Atoi(positionalArgs[1])
+		if err != nil {
+			os.Stderr.Write([]byte(err.Error() + "\n"))
+			os.Exit(1)
+		}
+	default:
 		os.Stderr.Write(usage)
 		os.Exit(1)
 	}
-	return argDomain, argRevoke
+
+	return argDomain, argLength, argRevoke
 }
 
 //GetMasterPassword queries the user for the master password.

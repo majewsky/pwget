@@ -74,6 +74,17 @@ hash of every revoked password. pwget will always show a list of all revoked
 passwords that it encounters, so you can recover from an undesired revocation
 easily.
 
+### Maximum length restriction
+
+Some stupid services enforce a maximum length of passwords. You should stop
+using these services, but if you absolutely cannot, you can pass the maximum
+password length as a second argument to truncate the generated password:
+
+```bash
+# stupidbank.com rejects passwords longer than 20 chars
+pwget stupidbank.com 20
+```
+
 ## Algorithm
 
 In pseudo-code:
