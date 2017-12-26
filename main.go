@@ -139,7 +139,7 @@ func GetMasterPassword() ([]byte, error) {
 }
 
 func revocationListPath() string {
-	return os.Getenv("HOME") + "/.pwget-revocation"
+	return os.Getenv("HOME") + "/.pwget2-revocation"
 }
 
 //LoadRevocationList reads the revocation list, which contains the SHA256
