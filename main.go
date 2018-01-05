@@ -56,7 +56,7 @@ func main() {
 		hash := sha256.Sum256([]byte(passwordStr))
 		hashStr = z85EncodeToString(hash[:])
 		if isSHA256OfRevokedPassword[hashStr] {
-			os.Stderr.Write([]byte("\x1B[37m" + hashStr + " is revoked\x1B[0m\n"))
+			os.Stderr.Write([]byte("\x1B[37mhash:" + hashStr + " is revoked\x1B[0m\n"))
 			continue
 		}
 		break
@@ -64,7 +64,7 @@ func main() {
 
 	//now, we either print or revoke the thing
 	if doRevoke {
-		os.Stderr.Write([]byte("Revoking " + hashStr + "\n"))
+		os.Stderr.Write([]byte("Revoking hash:" + hashStr + "\n"))
 		err := AppendToRevocationList(hashStr)
 		FailOnError("update revocation list", err)
 	} else {
