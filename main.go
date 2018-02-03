@@ -99,7 +99,7 @@ func ParseArguments() (domain string, length int, revoke bool) {
 		switch arg {
 		case "-h", "--help":
 			os.Stderr.Write(usage)
-			os.Exit(0)
+			os.Exit(1)
 		case "-r", "--revoke":
 			argRevoke = true
 		default:
