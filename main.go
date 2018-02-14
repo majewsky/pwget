@@ -130,6 +130,11 @@ func ParseArguments() (domain string, length int, revoke bool) {
 
 //GetMasterPassword queries the user for the master password.
 func GetMasterPassword() ([]byte, error) {
+	// read password from stdin if stdin is not a terminal
+	if !terminal.IsTerminal(syscall.Stdin) {
+		return ioutil.ReadAll(os.Stdin)
+	}
+
 	//prompt is written to stderr because pwget may be used in a pipe where the
 	//password is read from stdout by the next program (e.g. xsel or xclip)
 	os.Stderr.Write([]byte("Master password: "))
