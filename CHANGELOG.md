@@ -1,3 +1,11 @@
+# v2.1 (TBD)
+
+Changes:
+
+- When stdin is not a tty, do not show a prompt; just read the master password
+  from stdin directly. This mode of operation is useful when calling pwget from
+  a script or other automated process.
+
 # v2.0 (2017-12-26)
 
 **Backwards-incompatible changes:**
