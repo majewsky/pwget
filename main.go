@@ -131,7 +131,7 @@ func ParseArguments() (domain string, length int, revoke bool) {
 //GetMasterPassword queries the user for the master password.
 func GetMasterPassword() ([]byte, error) {
 	// read password from stdin if stdin is not a terminal
-	if !terminal.IsTerminal(syscall.Stdin) {
+	if !terminal.IsTerminal(int(syscall.Stdin)) {
 		return ioutil.ReadAll(os.Stdin)
 	}
 
