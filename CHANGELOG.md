@@ -1,10 +1,12 @@
-# v2.1 (TBD)
+# v2.1.0 (2022-05-18)
 
 Changes:
 
 - When stdin is not a tty, do not show a prompt; just read the master password
   from stdin directly. This mode of operation is useful when calling pwget from
   a script or other automated process.
+- Add go.mod file to work with newer Go versions.
+- Update all dependencies.
 
 # v2.0 (2017-12-26)
 
