@@ -3,7 +3,7 @@ PREFIX=/usr
 
 all: build/pwget
 
-GO            = GOPATH=$(CURDIR)/.gopath GOBIN=$(CURDIR)/build go
+GO            = GOBIN=$(CURDIR)/build go
 GO_BUILDFLAGS =
 GO_LDFLAGS    = -s -w
 
